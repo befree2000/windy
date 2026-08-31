@@ -18,15 +18,19 @@
   td:not(:first-child){font-weight:600}
   .goal-row{display:flex;gap:12px;flex-wrap:wrap}
   .goal-item{flex:1;min-width:140px;background:#f5f7ff;border-radius:8px;padding:14px 16px}
-  .goal-item .name{font-size:.8rem;color:#888;margin-bottom:6px}
+  .goal-item .name{font-size:.8rem;color:#888;margin-bottom:4px}
   .goal-item .ref{font-size:.75rem;color:#aaa;margin-bottom:8px}
-  .input-wrap{position:relative}
-  .input-wrap input{width:100%;border:1px solid #d0d8f0;border-radius:6px;padding:7px 28px 7px 10px;font-size:1.05rem;font-weight:700;color:#3a5ccc;background:#fff;outline:none;-moz-appearance:textfield}
+  .input-row{display:flex;gap:6px;align-items:center}
+  .input-wrap{position:relative;flex:1}
+  .input-wrap input{width:100%;border:1px solid #d0d8f0;border-radius:6px;padding:7px 24px 7px 10px;font-size:1.05rem;font-weight:700;color:#3a5ccc;background:#fff;outline:none;-moz-appearance:textfield}
   .input-wrap input::-webkit-outer-spin-button,.input-wrap input::-webkit-inner-spin-button{-webkit-appearance:none}
   .input-wrap input:focus{border-color:#3a5ccc}
   .input-wrap input::placeholder{color:#c0c8e8;font-weight:400;font-size:.9rem}
-  .input-wrap .unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:.95rem;font-weight:700;color:#3a5ccc;pointer-events:none}
-  .status{font-size:.72rem;margin-top:6px;min-height:14px}
+  .input-wrap .unit{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:.9rem;font-weight:700;color:#3a5ccc;pointer-events:none}
+  .save-btn{border:none;background:#3a5ccc;color:#fff;border-radius:6px;padding:7px 10px;font-size:.82rem;cursor:pointer;white-space:nowrap}
+  .save-btn:active{background:#2a4bbb}
+  .goal-amount{font-size:.82rem;color:#3a8c3a;font-weight:600;margin-top:6px;min-height:18px}
+  .status{font-size:.72rem;margin-top:2px;min-height:14px}
   .tabs{display:flex;gap:0;border-bottom:2px solid #eee}
   .tab-btn{padding:10px 18px;border:none;background:none;cursor:pointer;font-size:.9rem;color:#999;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:500}
   .tab-btn.active{color:#3a5ccc;border-bottom:2px solid #3a5ccc;font-weight:700}
@@ -43,33 +47,45 @@
   <p class="meta">기준: 2026년 8월 전체 · 작성: 2026-08-31</p>
 
   <div class="card">
-    <h2>🎯 9월 목표 절감률 <span style="font-weight:400;font-size:.85rem;color:#aaa">— 입력 후 엔터</span></h2>
+    <h2>🎯 9월 목표 절감률</h2>
     <div class="goal-row">
       <div class="goal-item">
         <div class="name">비프리</div>
         <div class="ref">8월 실적: ₩2,039,500</div>
-        <div class="input-wrap">
-          <input type="number" id="pct-befree" placeholder="0" min="0" max="100" onchange="saveGoal('befree',this)">
-          <span class="unit">%</span>
+        <div class="input-row">
+          <div class="input-wrap">
+            <input type="number" id="pct-befree" placeholder="0" min="0" max="100">
+            <span class="unit">%</span>
+          </div>
+          <button class="save-btn" onclick="saveGoal('befree',2039500)">저장</button>
         </div>
+        <div class="goal-amount" id="amount-befree"></div>
         <div class="status" id="status-befree"></div>
       </div>
       <div class="goal-item">
         <div class="name">현준</div>
         <div class="ref">8월 실적: ₩2,655,500</div>
-        <div class="input-wrap">
-          <input type="number" id="pct-hyunjun" placeholder="0" min="0" max="100" onchange="saveGoal('hyunjun',this)">
-          <span class="unit">%</span>
+        <div class="input-row">
+          <div class="input-wrap">
+            <input type="number" id="pct-hyunjun" placeholder="0" min="0" max="100">
+            <span class="unit">%</span>
+          </div>
+          <button class="save-btn" onclick="saveGoal('hyunjun',2655500)">저장</button>
         </div>
+        <div class="goal-amount" id="amount-hyunjun"></div>
         <div class="status" id="status-hyunjun"></div>
       </div>
       <div class="goal-item">
         <div class="name">적님</div>
         <div class="ref">8월 실적: ₩4,420,500</div>
-        <div class="input-wrap">
-          <input type="number" id="pct-jeoknm" placeholder="0" min="0" max="100" onchange="saveGoal('jeoknm',this)">
-          <span class="unit">%</span>
+        <div class="input-row">
+          <div class="input-wrap">
+            <input type="number" id="pct-jeoknm" placeholder="0" min="0" max="100">
+            <span class="unit">%</span>
+          </div>
+          <button class="save-btn" onclick="saveGoal('jeoknm',4420500)">저장</button>
         </div>
+        <div class="goal-amount" id="amount-jeoknm"></div>
         <div class="status" id="status-jeoknm"></div>
       </div>
     </div>
@@ -129,10 +145,15 @@ function switchTab(id,btn){
   btn.classList.add('active');
 }
 
-function saveGoal(who, input){
-  const pct = parseFloat(input.value);
+function saveGoal(who, base){
+  const pct = parseFloat(document.getElementById('pct-'+who).value);
+  const amountEl = document.getElementById('amount-'+who);
   const statusEl = document.getElementById('status-'+who);
-  if(isNaN(pct)||input.value===''){statusEl.textContent='';return;}
+  if(isNaN(pct)||document.getElementById('pct-'+who).value===''){
+    amountEl.textContent=''; statusEl.textContent=''; return;
+  }
+  const goal = Math.round(base * (1 - pct/100));
+  amountEl.textContent = '9월 목표액: ₩' + goal.toLocaleString();
   statusEl.textContent = '저장 중...';
   statusEl.style.color = '#aaa';
   fetch(SCRIPT_URL, {
