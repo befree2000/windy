@@ -57,7 +57,7 @@
             <input type="number" id="pct-befree" placeholder="0" min="0" max="100">
             <span class="unit">%</span>
           </div>
-          <button class="save-btn" onclick="saveGoal('befree',2039500)">저장</button>
+          <button class="save-btn" onclick="saveGoal('befree')">저장</button>
         </div>
         <div class="goal-amount" id="amount-befree"></div>
         <div class="status" id="status-befree"></div>
@@ -70,7 +70,7 @@
             <input type="number" id="pct-hyunjun" placeholder="0" min="0" max="100">
             <span class="unit">%</span>
           </div>
-          <button class="save-btn" onclick="saveGoal('hyunjun',2655500)">저장</button>
+          <button class="save-btn" onclick="saveGoal('hyunjun')">저장</button>
         </div>
         <div class="goal-amount" id="amount-hyunjun"></div>
         <div class="status" id="status-hyunjun"></div>
@@ -83,7 +83,7 @@
             <input type="number" id="pct-jeoknm" placeholder="0" min="0" max="100">
             <span class="unit">%</span>
           </div>
-          <button class="save-btn" onclick="saveGoal('jeoknm',4420500)">저장</button>
+          <button class="save-btn" onclick="saveGoal('jeoknm')">저장</button>
         </div>
         <div class="goal-amount" id="amount-jeoknm"></div>
         <div class="status" id="status-jeoknm"></div>
@@ -137,6 +137,7 @@
 </div>
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzVpK1YnU-k-NzhRAMXBP9fcVkHQpqcz_1a5S_tNo6xu0dckuC0f62CJyvefd_fnDcF0A/exec';
+const BASES = {befree:2039500, hyunjun:2655500, jeoknm:4420500};
 
 function switchTab(id,btn){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -145,15 +146,21 @@ function switchTab(id,btn){
   btn.classList.add('active');
 }
 
-function saveGoal(who, base){
+function updateAmount(who){
   const pct = parseFloat(document.getElementById('pct-'+who).value);
   const amountEl = document.getElementById('amount-'+who);
+  if(isNaN(pct)||document.getElementById('pct-'+who).value===''){amountEl.textContent='';return;}
+  const goal = Math.round(BASES[who] * (1 - pct/100));
+  amountEl.textContent = '9월 목표액: ₩' + goal.toLocaleString();
+}
+
+function saveGoal(who){
+  const pct = parseFloat(document.getElementById('pct-'+who).value);
   const statusEl = document.getElementById('status-'+who);
   if(isNaN(pct)||document.getElementById('pct-'+who).value===''){
-    amountEl.textContent=''; statusEl.textContent=''; return;
+    document.getElementById('amount-'+who).textContent=''; statusEl.textContent=''; return;
   }
-  const goal = Math.round(base * (1 - pct/100));
-  amountEl.textContent = '9월 목표액: ₩' + goal.toLocaleString();
+  updateAmount(who);
   statusEl.textContent = '저장 중...';
   statusEl.style.color = '#aaa';
   fetch(SCRIPT_URL + '?who=' + who + '&pct=' + pct, {
@@ -167,6 +174,24 @@ function saveGoal(who, base){
     statusEl.style.color = '#c00';
   });
 }
+
+// 페이지 로드 시 시트에서 저장된 값 읽어오기 (JSONP)
+function onGoalsLoaded(data){
+  ['befree','hyunjun','jeoknm'].forEach(who=>{
+    if(data[who]!==null&&data[who]!==undefined){
+      document.getElementById('pct-'+who).value = data[who];
+      updateAmount(who);
+    }
+  });
+}
+
+function loadGoals(){
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=read&callback=onGoalsLoaded';
+  document.head.appendChild(s);
+}
+
+window.addEventListener('DOMContentLoaded', loadGoals);
 </script>
 </body>
 </html>
