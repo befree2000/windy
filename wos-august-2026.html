@@ -19,12 +19,15 @@
   .goal-row{display:flex;gap:12px;flex-wrap:wrap}
   .goal-item{flex:1;min-width:140px;background:#f5f7ff;border-radius:8px;padding:14px 16px}
   .goal-item .name{font-size:.8rem;color:#888;margin-bottom:6px}
-  .goal-item .ref{font-size:.75rem;color:#aaa;margin-bottom:6px}
-  .goal-item input{width:100%;border:1px solid #d0d8f0;border-radius:6px;padding:7px 10px;font-size:1rem;font-weight:700;color:#3a5ccc;background:#fff;outline:none}
-  .goal-item input:focus{border-color:#3a5ccc}
-  .goal-item input::placeholder{color:#c0c8e8;font-weight:400}
-  .goal-item .diff{font-size:.75rem;color:#aaa;margin-top:5px;min-height:16px}
-  .goal-item .status{font-size:.72rem;margin-top:4px;min-height:14px}
+  .goal-item .ref{font-size:.75rem;color:#aaa;margin-bottom:8px}
+  .input-wrap{display:flex;align-items:center;gap:4px}
+  .input-wrap input{flex:1;min-width:0;border:1px solid #d0d8f0;border-radius:6px;padding:7px 10px;font-size:1.05rem;font-weight:700;color:#3a5ccc;background:#fff;outline:none;-moz-appearance:textfield}
+  .input-wrap input::-webkit-outer-spin-button,.input-wrap input::-webkit-inner-spin-button{-webkit-appearance:none}
+  .input-wrap input:focus{border-color:#3a5ccc}
+  .input-wrap input::placeholder{color:#c0c8e8;font-weight:400;font-size:.9rem}
+  .input-wrap .unit{font-size:1rem;font-weight:700;color:#3a5ccc}
+  .goal-amount{font-size:.82rem;color:#555;margin-top:6px;font-weight:600;min-height:18px}
+  .status{font-size:.72rem;margin-top:3px;min-height:14px}
   .tabs{display:flex;gap:0;border-bottom:2px solid #eee}
   .tab-btn{padding:10px 18px;border:none;background:none;cursor:pointer;font-size:.9rem;color:#999;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:500}
   .tab-btn.active{color:#3a5ccc;border-bottom:2px solid #3a5ccc;font-weight:700}
@@ -41,27 +44,36 @@
   <p class="meta">기준: 2026년 8월 전체 · 작성: 2026-08-31</p>
 
   <div class="card">
-    <h2>🎯 9월 목표 <span style="font-weight:400;font-size:.85rem;color:#aaa">— 입력 후 엔터</span></h2>
+    <h2>🎯 9월 목표 절감률 <span style="font-weight:400;font-size:.85rem;color:#aaa">— 입력 후 엔터</span></h2>
     <div class="goal-row">
       <div class="goal-item">
         <div class="name">비프리</div>
         <div class="ref">8월 실적: ₩2,039,500</div>
-        <input type="number" id="goal-befree" placeholder="목표 금액" onchange="saveGoal('befree',2039500,this)">
-        <div class="diff" id="diff-befree"></div>
+        <div class="input-wrap">
+          <input type="number" id="pct-befree" placeholder="절감률" min="0" max="100" onchange="saveGoal('befree',2039500,this)">
+          <span class="unit">%</span>
+        </div>
+        <div class="goal-amount" id="amount-befree"></div>
         <div class="status" id="status-befree"></div>
       </div>
       <div class="goal-item">
         <div class="name">현준</div>
         <div class="ref">8월 실적: ₩2,655,500</div>
-        <input type="number" id="goal-hyunjun" placeholder="목표 금액" onchange="saveGoal('hyunjun',2655500,this)">
-        <div class="diff" id="diff-hyunjun"></div>
+        <div class="input-wrap">
+          <input type="number" id="pct-hyunjun" placeholder="절감률" min="0" max="100" onchange="saveGoal('hyunjun',2655500,this)">
+          <span class="unit">%</span>
+        </div>
+        <div class="goal-amount" id="amount-hyunjun"></div>
         <div class="status" id="status-hyunjun"></div>
       </div>
       <div class="goal-item">
         <div class="name">적님</div>
         <div class="ref">8월 실적: ₩4,420,500</div>
-        <input type="number" id="goal-jeoknm" placeholder="목표 금액" onchange="saveGoal('jeoknm',4420500,this)">
-        <div class="diff" id="diff-jeoknm"></div>
+        <div class="input-wrap">
+          <input type="number" id="pct-jeoknm" placeholder="절감률" min="0" max="100" onchange="saveGoal('jeoknm',4420500,this)">
+          <span class="unit">%</span>
+        </div>
+        <div class="goal-amount" id="amount-jeoknm"></div>
         <div class="status" id="status-jeoknm"></div>
       </div>
     </div>
@@ -122,21 +134,19 @@ function switchTab(id,btn){
 }
 
 function saveGoal(who, base, input){
-  const val = parseInt(input.value);
-  const diffEl = document.getElementById('diff-'+who);
+  const pct = parseFloat(input.value);
+  const amountEl = document.getElementById('amount-'+who);
   const statusEl = document.getElementById('status-'+who);
-  if(!val||isNaN(val)){diffEl.textContent='';statusEl.textContent='';return;}
-  const diff = val - base;
-  const pct = ((diff/base)*100).toFixed(1);
-  const sign = diff>0?'+':'';
-  diffEl.textContent = sign+pct+'% ('+sign+'₩'+Math.abs(diff).toLocaleString()+')';
-  diffEl.style.color = diff<=0?'#3a8c3a':'#c00';
+  if(isNaN(pct)||input.value===''){amountEl.textContent='';statusEl.textContent='';return;}
+  const goal = Math.round(base * (1 - pct/100));
+  const saved = base - goal;
+  amountEl.textContent = '목표: ₩'+goal.toLocaleString()+' (−₩'+saved.toLocaleString()+')';
   statusEl.textContent = '저장 중...';
   statusEl.style.color = '#aaa';
   fetch(SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
-    body: JSON.stringify({who: who, goal: val})
+    body: JSON.stringify({who: who, goal: goal, pct: pct})
   }).then(()=>{
     statusEl.textContent = '✓ 시트에 저장됨';
     statusEl.style.color = '#3a8c3a';
