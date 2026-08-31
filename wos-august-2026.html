@@ -156,10 +156,9 @@ function saveGoal(who, base){
   amountEl.textContent = '9월 목표액: ₩' + goal.toLocaleString();
   statusEl.textContent = '저장 중...';
   statusEl.style.color = '#aaa';
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    body: new URLSearchParams({who: who, pct: pct})
+  fetch(SCRIPT_URL + '?who=' + who + '&pct=' + pct, {
+    method: 'GET',
+    mode: 'no-cors'
   }).then(()=>{
     statusEl.textContent = '✓ 시트에 저장됨';
     statusEl.style.color = '#3a8c3a';
