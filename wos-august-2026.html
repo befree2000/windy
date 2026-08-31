@@ -159,7 +159,7 @@ function saveGoal(who, base){
   fetch(SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
-    body: JSON.stringify({who: who, pct: pct})
+    body: new URLSearchParams({who: who, pct: pct})
   }).then(()=>{
     statusEl.textContent = '✓ 시트에 저장됨';
     statusEl.style.color = '#3a8c3a';
