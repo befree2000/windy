@@ -18,9 +18,14 @@
   td:not(:first-child){font-weight:600}
   .goal-row{display:flex;gap:12px;flex-wrap:wrap}
   .goal-item{flex:1;min-width:140px;background:#f5f7ff;border-radius:8px;padding:14px 16px}
-  .goal-item .name{font-size:.8rem;color:#888;margin-bottom:4px}
-  .goal-item .amount{font-size:1.1rem;font-weight:700;color:#3a5ccc}
-  .goal-item .note{font-size:.78rem;color:#aaa;margin-top:2px}
+  .goal-item.inactive{background:#f5f5f5}
+  .goal-item .name{font-size:.8rem;color:#888;margin-bottom:6px}
+  .goal-item .ref{font-size:.75rem;color:#aaa;margin-bottom:6px}
+  .goal-item input{width:100%;border:1px solid #d0d8f0;border-radius:6px;padding:7px 10px;font-size:1rem;font-weight:700;color:#3a5ccc;background:#fff;outline:none}
+  .goal-item input:focus{border-color:#3a5ccc}
+  .goal-item input::placeholder{color:#c0c8e8;font-weight:400}
+  .goal-item .diff{font-size:.75rem;color:#aaa;margin-top:5px;min-height:16px}
+  .goal-item .inactive-text{font-size:1rem;font-weight:700;color:#aaa}
   .tabs{display:flex;gap:0;margin-bottom:0;border-bottom:2px solid #eee}
   .tab-btn{padding:10px 18px;border:none;background:none;cursor:pointer;font-size:.9rem;color:#999;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:500}
   .tab-btn.active{color:#3a5ccc;border-bottom:2px solid #3a5ccc;font-weight:700}
@@ -37,22 +42,24 @@
   <p class="meta">기준: 2026년 8월 전체 · 작성: 2026-08-31</p>
 
   <div class="card">
-    <h2>🎯 9월 목표</h2>
+    <h2>🎯 9월 목표 <span style="font-weight:400;font-size:.85rem;color:#aaa">— 각자 입력해주세요</span></h2>
     <div class="goal-row">
       <div class="goal-item">
         <div class="name">비프리</div>
-        <div class="amount">₩1,631,600</div>
-        <div class="note">8월 대비 −20% (−₩407,900)</div>
+        <div class="ref">8월 실적: ₩2,039,500</div>
+        <input type="number" id="goal-befree" placeholder="목표 금액 입력" oninput="calcDiff('befree',2039500)">
+        <div class="diff" id="diff-befree"></div>
       </div>
       <div class="goal-item">
         <div class="name">현준</div>
-        <div class="amount">₩2,257,175</div>
-        <div class="note">8월 대비 −15% (−₩398,325)</div>
+        <div class="ref">8월 실적: ₩2,655,500</div>
+        <input type="number" id="goal-hyunjun" placeholder="목표 금액 입력" oninput="calcDiff('hyunjun',2655500)">
+        <div class="diff" id="diff-hyunjun"></div>
       </div>
-      <div class="goal-item" style="background:#f5f5f5">
+      <div class="goal-item inactive">
         <div class="name">적님</div>
-        <div class="amount" style="color:#aaa">—</div>
-        <div class="note">9월 휴식</div>
+        <div class="ref">8월 실적: ₩4,420,500</div>
+        <div class="inactive-text">— 9월 휴식</div>
       </div>
     </div>
   </div>
@@ -79,21 +86,18 @@
       <button class="tab-btn" onclick="switchTab('hyunjun',this)">현준</button>
       <button class="tab-btn" onclick="switchTab('jeoknm',this)">적님</button>
     </div>
-
     <div id="tab-befree" class="tab-panel active">
       <div class="label" style="margin-top:0">지출 구조</div>
       <p style="font-size:.93rem;margin-bottom:12px">주간 ₩229,000 / 격주 ₩75,000 / 월간 ₩716,500 / 기타이벤트 ₩1,019,000</p>
       <hr class="thin">
       <p style="font-size:.9rem">기타 이벤트(쌍둥이 별 등)가 전체의 50%이며, 쌍둥이 별과 함께 이벤트 하나에 ₩951,500이 집중됐다.</p>
     </div>
-
     <div id="tab-hyunjun" class="tab-panel">
       <div class="label" style="margin-top:0">지출 구조</div>
       <p style="font-size:.93rem;margin-bottom:12px">주간 ₩629,500 / 격주 ₩75,000 / 월간 ₩723,000 / 기타이벤트 ₩1,228,000</p>
       <hr class="thin">
       <p style="font-size:.9rem">기타 이벤트 비중이 46%이며, 쌍둥이 별 이벤트 하나(₩1,130,500)가 이벤트 전체의 대부분을 차지한다. 주간 항목 중 펫맞춤 패키지(₩412,000)가 고정 반복 지출로 포함된다.</p>
     </div>
-
     <div id="tab-jeoknm" class="tab-panel">
       <div class="label" style="margin-top:0">지출 구조</div>
       <p style="font-size:.93rem;margin-bottom:12px">주간 ₩1,707,500 / 격주 ₩90,000 / 월간 ₩1,054,000 / 기타이벤트 ₩1,569,000</p>
@@ -110,6 +114,16 @@ function switchTab(id,btn){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
+}
+function calcDiff(id, base){
+  const val = parseInt(document.getElementById('goal-'+id).value);
+  const el = document.getElementById('diff-'+id);
+  if(!val || isNaN(val)){ el.textContent=''; return; }
+  const diff = val - base;
+  const pct = ((diff/base)*100).toFixed(1);
+  const sign = diff > 0 ? '+' : '';
+  el.textContent = sign + pct + '% (' + sign + '₩' + Math.abs(diff).toLocaleString() + ')';
+  el.style.color = diff <= 0 ? '#3a8c3a' : '#c00';
 }
 </script>
 </body>
