@@ -88,8 +88,8 @@
   <!-- Summary -->
   <div class="summary">
     <div class="summary-card critical"><div class="count">0</div><div class="label">🔴 Critical</div></div>
-    <div class="summary-card high"><div class="count">1</div><div class="label">🟠 High</div></div>
-    <div class="summary-card medium"><div class="count">4</div><div class="label">🟡 Medium</div></div>
+    <div class="summary-card high"><div class="count">2</div><div class="label">🟠 High</div></div>
+    <div class="summary-card medium"><div class="count">3</div><div class="label">🟡 Medium</div></div>
     <div class="summary-card low"><div class="count">1</div><div class="label">🟢 Low</div></div>
   </div>
 
@@ -144,6 +144,31 @@ except Exception as e:
     </div>
   </div>
 
+  <!-- High 추가 -->
+  <div class="section" style="margin-top:-8px">
+    <div class="card">
+      <div class="card-header">
+        <div class="severity sev-high"></div>
+        <div class="card-title">H-02 &nbsp; 영구 마스터키(appkey/appsecret)가 모든 요청에 노출 — 서버 설계 구조 취약점</div>
+        <span class="tag tag-high">High</span>
+      </div>
+      <div class="card-desc">
+        <strong>실증:</strong> Bearer 토큰 없이 appkey/appsecret만으로는 호출 불가이나, appkey/appsecret 없이 Bearer 토큰만으로도 호출 불가 — 서버가 <strong>두 가지를 동시에 필수로 요구</strong>.<br><br>
+        표준 OAuth 2.0에서 client_secret(appsecret)은 <strong>토큰 발급 시에만</strong> 사용하는 마스터키. 이후 API 호출엔 노출하지 않는 것이 원칙.<br><br>
+        <strong>KIS 구조의 문제:</strong>
+      </div>
+      <table class="test-table" style="margin:8px 0 12px">
+        <tr><th>인증 수단</th><th>만료</th><th>노출 빈도</th><th>탈취 시 피해</th></tr>
+        <tr><td>Bearer 토큰</td><td>24시간</td><td>매 요청</td><td class="ok">최대 24시간</td></tr>
+        <tr><td>appkey/appsecret</td><td class="warn">영구</td><td class="warn">매 요청</td><td class="warn">재발급 전까지 무기한</td></tr>
+      </table>
+      <div class="card-desc">
+        <strong>토큰 발급의 실질적 의미 상실:</strong> appkey/appsecret을 탈취한 공격자는 토큰을 무효화해도 즉시 새 토큰을 재발급할 수 있음. 즉 Bearer 토큰은 보안 레이어가 아닌 <strong>API 관리 레이어(rate limit, 감사 로그)</strong>에 불과.
+      </div>
+      <div class="rec">서버 설계 수준의 개선 필요. API 호출 시 appkey/appsecret 불필요하도록 인증 구조 재설계 검토. 단기 완화: appkey/appsecret 노출 최소화 (저장 암호화, 전송 경로 제한, 탈취 시 즉시 재발급 프로세스 정립).</div>
+    </div>
+  </div>
+
   <!-- Medium -->
   <div class="section">
     <div class="section-title">🟡 Medium</div>
@@ -161,19 +186,6 @@ except Exception as e:
       <pre><code># 현재 — 주석 처리
 # if (hashFlag): set_order_hash_key(headers, params)</code></pre>
       <div class="rec">종심 방어 관점에서 주석 해제 권장.</div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <div class="severity sev-medium"></div>
-        <div class="card-title">M-02 &nbsp; appkey/appsecret 모든 요청 헤더에 포함</div>
-        <span class="tag tag-medium">Medium</span>
-      </div>
-      <div class="card-desc">
-        토큰 발급 후 API 호출에서도 appkey/appsecret이 매 요청 헤더에 포함됨.
-        클라이언트 환경에서 헤더 로깅/캡처 시 키 쌍 노출 가능.
-      </div>
-      <div class="rec">토큰 발급 이후 API 호출에서는 Bearer 토큰만 사용하도록 변경 검토.</div>
     </div>
 
     <div class="card">
