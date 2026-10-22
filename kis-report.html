@@ -158,12 +158,12 @@ except Exception as e:
         <strong>KIS 구조의 문제:</strong>
       </div>
       <table class="test-table" style="margin:8px 0 12px">
-        <tr><th>인증 수단</th><th>만료</th><th>노출 빈도</th><th>탈취 시 피해</th></tr>
-        <tr><td>Bearer 토큰</td><td>24시간</td><td>매 요청</td><td class="ok">최대 24시간</td></tr>
-        <tr><td>appkey/appsecret</td><td class="warn">영구</td><td class="warn">매 요청</td><td class="warn">재발급 전까지 무기한</td></tr>
+        <tr><th>인증 수단</th><th>실질 역할</th><th>만료</th><th>탈취 시 피해</th></tr>
+        <tr><td>appkey/appsecret</td><td class="warn">실질 인증 (신원 증명)</td><td class="warn">영구</td><td class="warn">재발급 전까지 무기한</td></tr>
+        <tr><td>Bearer 토큰</td><td>세션 유지 (ID에 불과)</td><td>24시간</td><td class="ok">최대 24시간</td></tr>
       </table>
       <div class="card-desc">
-        <strong>토큰 발급의 실질적 의미 상실:</strong> appkey/appsecret을 탈취한 공격자는 토큰을 무효화해도 즉시 새 토큰을 재발급할 수 있음. 즉 Bearer 토큰은 보안 레이어가 아닌 <strong>API 관리 레이어(rate limit, 감사 로그)</strong>에 불과.
+        <strong>핵심:</strong> Bearer 토큰은 <em>인증 토큰이 아닌 세션 토큰</em>으로 사용되고 있음. 진짜 인증 수단(appkey/appsecret)이 모든 요청에 노출되는 구조로, 토큰 무효화는 보안 상 효과가 없음 — 공격자가 appkey/appsecret을 탈취하면 즉시 새 토큰을 재발급할 수 있기 때문. 실질적 차단 수단이 appkey/appsecret 재발급 하나만으로 한정됨.
       </div>
       <div class="rec">서버 설계 수준의 개선 필요. API 호출 시 appkey/appsecret 불필요하도록 인증 구조 재설계 검토. 단기 완화: appkey/appsecret 노출 최소화 (저장 암호화, 전송 경로 제한, 탈취 시 즉시 재발급 프로세스 정립).</div>
     </div>
