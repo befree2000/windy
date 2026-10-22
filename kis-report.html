@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KIS OpenAPI 취약점 분석 보고서</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; padding: 24px; }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  .header { background: linear-gradient(135deg, #1a1f2e, #252b3b); border: 1px solid #2d3748; border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; }
+  .header h1 { font-size: 22px; font-weight: 700; color: #f7fafc; margin-bottom: 8px; }
+  .header .meta { font-size: 13px; color: #718096; display: flex; gap: 20px; flex-wrap: wrap; }
+  .header .meta span { display: flex; align-items: center; gap: 6px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-complete { background: #22543d; color: #68d391; }
+  .badge-pending { background: #2d3748; color: #a0aec0; }
+
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .summary-card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 10px; padding: 16px; text-align: center; }
+  .summary-card .count { font-size: 32px; font-weight: 700; margin-bottom: 4px; }
+  .summary-card .label { font-size: 12px; color: #718096; }
+  .critical .count { color: #fc8181; }
+  .high .count { color: #f6ad55; }
+  .medium .count { color: #faf089; }
+  .low .count { color: #68d391; }
+
+  .section { margin-bottom: 20px; }
+  .section-title { font-size: 13px; font-weight: 600; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-left: 4px; }
+
+  .card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 10px; padding: 20px; margin-bottom: 12px; }
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .severity { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sev-high { background: #f6ad55; box-shadow: 0 0 6px #f6ad55; }
+  .sev-medium { background: #faf089; box-shadow: 0 0 6px #faf089; }
+  .sev-low { background: #68d391; box-shadow: 0 0 6px #68d391; }
+  .sev-ok { background: #4299e1; box-shadow: 0 0 6px #4299e1; }
+
+  .card-title { font-size: 15px; font-weight: 600; color: #f7fafc; flex: 1; }
+  .tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .tag-high { background: #7b341e; color: #f6ad55; }
+  .tag-medium { background: #5f370e; color: #faf089; }
+  .tag-low { background: #22543d; color: #68d391; }
+  .tag-ok { background: #2a4365; color: #90cdf4; }
+
+  .card-desc { font-size: 13px; color: #a0aec0; margin-bottom: 12px; }
+  .card-desc strong { color: #e2e8f0; }
+
+  code { background: #2d3748; color: #90cdf4; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 12px; }
+  pre { background: #2d3748; border-radius: 8px; padding: 14px; overflow-x: auto; margin: 10px 0; }
+  pre code { background: none; padding: 0; font-size: 12px; color: #a8c4e0; }
+
+  .rec { background: #1c2d1e; border-left: 3px solid #48bb78; border-radius: 0 6px 6px 0; padding: 10px 14px; font-size: 12px; color: #9ae6b4; margin-top: 10px; }
+  .rec::before { content: "💡 권고 "; font-weight: 600; }
+
+  .test-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .test-table th { background: #2d3748; color: #a0aec0; font-weight: 600; padding: 10px 14px; text-align: left; font-size: 12px; }
+  .test-table td { padding: 10px 14px; border-bottom: 1px solid #2d3748; color: #e2e8f0; }
+  .test-table tr:last-child td { border-bottom: none; }
+  .ok { color: #68d391; }
+  .warn { color: #f6ad55; }
+
+  .phase2 { background: linear-gradient(135deg, #1a1f2e, #1e2535); border: 1px solid #4a5568; border-radius: 10px; padding: 20px; }
+  .phase2 h3 { font-size: 14px; color: #90cdf4; margin-bottom: 14px; }
+  .phase2-item { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #2d3748; }
+  .phase2-item:last-child { border-bottom: none; }
+  .phase2-label { font-size: 12px; color: #718096; width: 90px; flex-shrink: 0; }
+  .phase2-content { font-size: 13px; color: #a0aec0; }
+
+  .footer { text-align: center; font-size: 12px; color: #4a5568; margin-top: 32px; padding-top: 16px; border-top: 1px solid #2d3748; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🔍 KIS OpenAPI 취약점 분석 보고서</h1>
+    <div class="meta">
+      <span>📅 2026-10-22</span>
+      <span>🔬 Phase 1 — 외부 정찰 + 코드 분석</span>
+      <span><span class="badge badge-complete">외부 분석 완료</span></span>
+      <span><span class="badge badge-pending">심층 분석 예정</span></span>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary">
+    <div class="summary-card critical"><div class="count">0</div><div class="label">🔴 Critical</div></div>
+    <div class="summary-card high"><div class="count">1</div><div class="label">🟠 High</div></div>
+    <div class="summary-card medium"><div class="count">4</div><div class="label">🟡 Medium</div></div>
+    <div class="summary-card low"><div class="count">1</div><div class="label">🟢 Low</div></div>
+  </div>
+
+  <!-- 서버 검증 테스트 결과 -->
+  <div class="section">
+    <div class="section-title">서버 검증 테스트 결과</div>
+    <div class="card">
+      <table class="test-table">
+        <tr>
+          <th>테스트 항목</th>
+          <th>결과</th>
+          <th>서버 응답</th>
+        </tr>
+        <tr>
+          <td>모의 토큰 + 실전 tr_id 호출</td>
+          <td class="ok">✅ 차단</td>
+          <td><code>EGW02006 — 모의투자 TR이 아닙니다</code></td>
+        </tr>
+        <tr>
+          <td>모의 토큰 + 실전 도메인 호출</td>
+          <td class="ok">✅ 차단</td>
+          <td><code>EGW02004 — 실전 도메인은 모의 앱키 불가</code></td>
+        </tr>
+        <tr>
+          <td>BOLA — 타인 계좌번호 조회 (OpenAPI 신청 계좌)</td>
+          <td class="ok">✅ 차단</td>
+          <td><code>OPSQ2000 — appkey-계좌 바인딩 검증</code></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- High -->
+  <div class="section">
+    <div class="section-title">🟠 High</div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="severity sev-high"></div>
+        <div class="card-title">H-01 &nbsp; 내부 예외 메시지 클라이언트 노출</div>
+        <span class="tag tag-high">High</span>
+      </div>
+      <div class="card-desc">
+        <strong>위치:</strong> <code>backend/routers/</code> 전반 (auth.py, orders.py, account.py)<br><br>
+        내부 예외 메시지가 HTTP 응답에 그대로 포함됨. 공격자가 획득 가능한 정보:
+        내부 파일 경로, 서버 설정 구조, 향후 DB 오류 메시지.
+      </div>
+      <pre><code># 현재 — 위험
+except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))</code></pre>
+      <div class="rec">예외 추상화 처리. 서버 로그에만 기록하고 클라이언트에는 일반 메시지 반환.</div>
+    </div>
+  </div>
+
+  <!-- Medium -->
+  <div class="section">
+    <div class="section-title">🟡 Medium</div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="severity sev-medium"></div>
+        <div class="card-title">M-01 &nbsp; hashkey 비활성화 — 종심 방어 미적용</div>
+        <span class="tag tag-medium">Medium</span>
+      </div>
+      <div class="card-desc">
+        주문 변조 방지용 hashkey 호출이 주석 처리됨. TLS로 네트워크 MITM은 방어되지만
+        Replay Attack 및 로컬 악성코드의 파라미터 조작은 방어 불가.
+      </div>
+      <pre><code># 현재 — 주석 처리
+# if (hashFlag): set_order_hash_key(headers, params)</code></pre>
+      <div class="rec">종심 방어 관점에서 주석 해제 권장.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="severity sev-medium"></div>
+        <div class="card-title">M-02 &nbsp; appkey/appsecret 모든 요청 헤더에 포함</div>
+        <span class="tag tag-medium">Medium</span>
+      </div>
+      <div class="card-desc">
+        토큰 발급 후 API 호출에서도 appkey/appsecret이 매 요청 헤더에 포함됨.
+        클라이언트 환경에서 헤더 로깅/캡처 시 키 쌍 노출 가능.
+      </div>
+      <div class="rec">토큰 발급 이후 API 호출에서는 Bearer 토큰만 사용하도록 변경 검토.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="severity sev-medium"></div>
+        <div class="card-title">M-03 &nbsp; Rate Limiting 없음</div>
+        <span class="tag tag-medium">Medium</span>
+      </div>
+      <div class="card-desc">
+        <strong>실측:</strong> 10회 연속 무제한 허용 확인.<br>
+        <code>POST /login</code>, <code>POST /switch-mode</code> 엔드포인트에 요청 횟수 제한 없음.
+        AI 자동화 공격 시 credential stuffing 및 서비스 불안정화 가능. (2026년 금융권 해킹 동일 패턴)
+      </div>
+      <div class="rec">slowapi 등 rate limiting 적용. switch-mode 쿨다운은 Redis 기반으로 변경.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="severity sev-medium"></div>
+        <div class="card-title">M-04 &nbsp; WebSocket 구독 제한 클라이언트 사이드만</div>
+        <span class="tag tag-medium">Medium</span>
+      </div>
+      <div class="card-desc">
+        40개 구독 제한이 클라이언트에만 존재. 서버 사이드 강제 여부 미확인.
+        우회 시 서버 부하 유발 가능.
+      </div>
+      <div class="rec">서버 사이드 구독 수 제한 적용 여부 확인 필요.</div>
+    </div>
+  </div>
+
+  <!-- Low -->
+  <div class="section">
+    <div class="section-title">🟢 Low</div>
+    <div class="card">
+      <div class="card-header">
+        <div class="severity sev-low"></div>
+        <div class="card-title">L-01 &nbsp; 액세스 토큰 평문 파일 저장</div>
+        <span class="tag tag-low">Low</span>
+      </div>
+      <div class="card-desc">
+        토큰이 <code>~/KIS/config/KIS{날짜}</code>에 평문 저장. 유효기간 24시간.
+        로컬 악성 프로세스 또는 타 사용자가 파일 접근 시 탈취 가능.
+      </div>
+      <div class="rec">파일 권한 <code>chmod 600</code> 적용, OS keychain 활용 검토.</div>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="section">
+    <div class="section-title">Phase 2 — 심층 분석 예정</div>
+    <div class="phase2">
+      <h3>내부 담당자 관점 점검 항목</h3>
+      <div class="phase2-item">
+        <div class="phase2-label">서버 코드</div>
+        <div class="phase2-content">API 게이트웨이 인증 로직, 계좌-appkey 바인딩 실제 구현, 엣지케이스 분석</div>
+      </div>
+      <div class="phase2-item">
+        <div class="phase2-label">인프라</div>
+        <div class="phase2-content">DMZ 구간 개인정보 보유 여부, 내부망-외부 API 경계 설계 (2026년 해킹 동일 패턴)</div>
+      </div>
+      <div class="phase2-item">
+        <div class="phase2-label">운영/프로세스</div>
+        <div class="phase2-content">퇴직자 appkey 폐기 프로세스, API 호출 로그 이상탐지, 외부 개발자 계정 관리</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">KIS OpenAPI Security Review · Phase 1 Complete · 2026-10-22</div>
+</div>
+</body>
+</html>
